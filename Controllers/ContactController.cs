@@ -1,0 +1,71 @@
+using Microsoft.AspNetCore.Mvc;
+using MyApi.Data;
+using MyApi.Models;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Security.Claims;
+using System.Diagnostics;
+
+namespace MyApi.Controllers
+{
+    [ApiController]
+    [Route("[controller]")]
+    public class ContactsController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+
+        public ContactsController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Contact>>> GetAll()
+        {
+            var userId = GetUserId();
+            var contacts = await _context.Contacts
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+            return Ok(contacts);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Contact>> Create(Contact contact)
+        {
+            contact.UserId = GetUserId();
+            _context.Contacts.Add(contact);
+            await _context.SaveChangesAsync();
+            return Ok(contact);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, Contact updated)
+        {
+            var contact = await _context.Contacts.FindAsync(id);
+            if (contact == null) return NotFound();
+            contact.Name = updated.Name;
+            contact.Email = updated.Email;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var contact = await _context.Contacts.FindAsync(id);
+            if (contact == null) return NotFound();
+            _context.Contacts.Remove(contact);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        private int GetUserId()
+        {
+            int userId = 1;
+            return userId;
+        }
+    }
+}
