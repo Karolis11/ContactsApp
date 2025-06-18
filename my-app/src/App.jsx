@@ -13,10 +13,20 @@ function App() {
   const [loggedInUsername, setLoggedInUsername] = useState('');
 
   const loadContacts = () => {
-    fetch(API_contacts)
-      .then(res => res.json())
-      .then(setContacts);
-  };
+    const token = localStorage.getItem('jwtToken'); // Retrieve token from localStorage
+    fetch(API_contacts, {
+      headers: { Authorization: `Bearer ${token}` } // Include token in Authorization header
+    })
+      .then(res => {
+        if (res.ok) {
+          return res.json();
+        } else {
+          throw new Error('Unauthorized');
+        }
+      })
+      .then(setContacts)
+      .catch(err => alert(err.message));
+    };
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -41,16 +51,20 @@ function App() {
 
   const handleLogin = e => {
     e.preventDefault();
-    fetch(API_users, {
+    fetch(API_users + '/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(loginForm)
+      body: JSON.stringify({
+        username: loginForm.username,
+        password: loginForm.password
+      })
     }).then(res => {
       if (res.ok) {
-        setIsLoggedIn(true);
-        setLoggedInUsername(loginForm.username);
-        setLoginForm({ username: '', password: '' });
+        res.text().then(token => {
+          localStorage.setItem('jwtToken', token); // Store token in localStorage
+          setIsLoggedIn(true);
+          setLoggedInUsername(loginForm.username);
+        });
       } else {
         alert('Login failed. Please check your credentials.');
       }
@@ -61,8 +75,9 @@ function App() {
     e.preventDefault();
     fetch(API_contacts, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: { 'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('jwtToken')}`
+       },
       body: JSON.stringify(form)
     }).then(() => {
       setForm({ name: '', email: '' });
@@ -71,7 +86,10 @@ function App() {
   };
 
   const handleDelete = id => {
-    fetch(`${API_contacts}/${id}`, { method: 'DELETE' }).then(loadContacts);
+    fetch(`${API_contacts}/${id}`, { 
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${localStorage.getItem('jwtToken')}` }
+    }).then(loadContacts);
   };
 
   const handleUpdateSubmit = e => {
@@ -79,7 +97,9 @@ function App() {
     if (editContact) {
       fetch(`${API_contacts}/${editContact.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('jwtToken')}`
+         },
         body: JSON.stringify(editContact)
       }).then(() => {
         setEditContact(null);
@@ -90,6 +110,7 @@ function App() {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    localStorage.removeItem('jwtToken'); 
     setLoggedInUsername('');
     setContacts([]);
     setForm({ name: '', email: '' });

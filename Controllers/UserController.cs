@@ -4,6 +4,9 @@ using MyApi.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
 
 namespace MyApi.Controllers
 {
@@ -30,12 +33,37 @@ namespace MyApi.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<User>> Login(string username, string password)
+        public async Task<ActionResult<User>> Login([FromBody] LoginRequest loginRequest)
         {
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == username && u.Password == password);
+                .FirstOrDefaultAsync(u => u.Username == loginRequest.Username && u.Password == loginRequest.Password);
             if (user == null) return Unauthorized();
-            return Ok(user);
+            
+            // Generate JWT Token
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+            if (string.IsNullOrEmpty(secretKey))
+            {
+                throw new InvalidOperationException("JWT_SECRET_KEY environment variable is not set.");
+            }
+            var key = Encoding.UTF8.GetBytes(secretKey);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.Username)
+                }),
+                Expires = DateTime.UtcNow.AddHours(1), // Token expiration
+                Issuer = "http://localhost:5271/",
+                Audience = "http://localhost:5173/",
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var jwtToken = tokenHandler.WriteToken(token);
+
+            return Ok(jwtToken); // Return the token to the client
         }
         public async Task<ActionResult<User>> GetById(int id)
         {

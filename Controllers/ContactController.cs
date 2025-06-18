@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Claims;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MyApi.Controllers
 {
@@ -22,6 +23,7 @@ namespace MyApi.Controllers
             _context = context;
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Contact>>> GetAll()
         {
@@ -32,6 +34,7 @@ namespace MyApi.Controllers
             return Ok(contacts);
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<Contact>> Create(Contact contact)
         {
@@ -41,6 +44,7 @@ namespace MyApi.Controllers
             return Ok(contact);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, Contact updated)
         {
@@ -52,6 +56,7 @@ namespace MyApi.Controllers
             return NoContent();
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -62,10 +67,18 @@ namespace MyApi.Controllers
             return NoContent();
         }
 
+        [Authorize]
         private int GetUserId()
         {
-            int userId = 1;
-            return userId;
+            Debug.WriteLine("Retrieving User ID from claims.");
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                Debug.WriteLine("User ID claim is missing.");
+                throw new UnauthorizedAccessException("User ID claim is missing.");
+            }
+            Debug.WriteLine($"User ID claim found: {userIdClaim}");
+            return int.Parse(userIdClaim);
         }
     }
 }
