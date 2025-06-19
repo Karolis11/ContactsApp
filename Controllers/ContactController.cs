@@ -67,17 +67,16 @@ namespace MyApi.Controllers
             return NoContent();
         }
 
-        [Authorize]
         private int GetUserId()
         {
-            Debug.WriteLine("Retrieving User ID from claims.");
+            Console.WriteLine("Retrieving User ID from claims.");
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdClaim))
             {
-                Debug.WriteLine("User ID claim is missing.");
+                Console.WriteLine("User ID claim is missing.");
                 throw new UnauthorizedAccessException("User ID claim is missing.");
             }
-            Debug.WriteLine($"User ID claim found: {userIdClaim}");
+            Console.WriteLine($"User ID claim found: {userIdClaim}");
             return int.Parse(userIdClaim);
         }
     }

@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 
 const API_contacts = 'http://localhost:5271/contacts';
 const API_users = 'http://localhost:5271/user';
 
 function App() {
   const [contacts, setContacts] = useState([]);
+  const [users, setUsers] = useState([]);
   const [form, setForm] = useState({ name: '', email: '' });
   const [editContact, setEditContact] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -28,12 +29,28 @@ function App() {
       .catch(err => alert(err.message));
     };
 
+  const loadUsers = () => {
+    fetch(API_users)
+      .then(res => res.json())
+      .then(setUsers)
+      .catch(err => console.error('Error loading users:', err));
+  };
+
   useEffect(() => {
     if (isLoggedIn) {
       loadContacts();
     }
     else {
       setContacts([]);
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      loadUsers();
+    }
+    else {
+      setUsers([]);
     }
   }, [isLoggedIn]);
 
@@ -119,9 +136,36 @@ function App() {
     setRegisterForm({ username: '', password: '' });
   }
 
+  const handleAddUser = (username) => {
+    console.log('Adding user:', username);
+    fetch(API_contacts, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('jwtToken')}`
+       },
+       body: JSON.stringify({name: username, email: ''})
+    }).then(() => {
+      setForm({ name: '', email: '' });
+      loadContacts();
+    });
+  }
+
+
   return (
     <div style={{ padding: '2rem' }}>
       <h1>Contact Manager</h1>
+
+      <div>
+        <h2>Users</h2>
+        <ul>
+          {users.map(user => (
+            <li key={user.id}>
+              {user.username} 
+              <button onClick={() => handleAddUser(user.username)}>Add To Contacts</button>
+            </li>
+          ))}
+        </ul>
+      </div>
 
       {!isLoggedIn ? (
         <div>
@@ -178,7 +222,7 @@ function App() {
       <ul>
         {contacts.map(c => (
           <li key={c.id}>
-            {c.userId} {c.name} ({c.email}){' '}
+            {c.name} ({c.email}){' '}
             <button onClick={() => handleDelete(c.id)}>Delete</button>
             <button onClick={() => setEditContact(c)}>Update</button>
           </li>

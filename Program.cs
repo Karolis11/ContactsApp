@@ -27,10 +27,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=contacts.db"));
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=users.db"));
+    options.UseSqlite("Data Source=app.db"));
 
 var jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
                                ?? throw new InvalidOperationException("JWT_SECRET_KEY environment variable is not set.");
