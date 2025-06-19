@@ -1,2 +1,2 @@
-![Login](assets/login.png)
+![Login](assets/Login.png)
 ![Contacts](assets/Contacts.png)
