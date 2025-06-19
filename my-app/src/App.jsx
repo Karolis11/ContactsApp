@@ -10,7 +10,7 @@ function App() {
   const [editContact, setEditContact] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-  const [registerForm, setRegisterForm] = useState({ username: '', password: '' });
+  const [registerForm, setRegisterForm] = useState({ username: '', email: '',  password: '' });
   const [loggedInUsername, setLoggedInUsername] = useState('');
 
   const loadContacts = () => {
@@ -61,7 +61,7 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(registerForm),
     }).then(() => {
-      setRegisterForm({ username: '', password: '' });
+      setRegisterForm({ username: '', email: '', password: '' });
       alert('Registration successful!');
     });
   };
@@ -133,17 +133,17 @@ function App() {
     setForm({ name: '', email: '' });
     setEditContact(null);
     setLoginForm({ username: '', password: '' });
-    setRegisterForm({ username: '', password: '' });
+    setRegisterForm({ username: '', email: '', password: '' });
   }
 
-  const handleAddUser = (username) => {
+  const handleAddUser = (username, email) => {
     console.log('Adding user:', username);
     fetch(API_contacts, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json',
         Authorization: `Bearer ${localStorage.getItem('jwtToken')}`
        },
-       body: JSON.stringify({name: username, email: ''})
+       body: JSON.stringify({name: username, email: email})
     }).then(() => {
       setForm({ name: '', email: '' });
       loadContacts();
@@ -161,7 +161,7 @@ function App() {
           {users.map(user => (
             <li key={user.id}>
               {user.username} 
-              <button onClick={() => handleAddUser(user.username)}>Add To Contacts</button>
+              <button onClick={() => handleAddUser(user.username, user.email)}>Add To Contacts</button>
             </li>
           ))}
         </ul>
@@ -191,6 +191,11 @@ function App() {
               placeholder="Username"
               value={registerForm.username}
               onChange={e => setRegisterForm({ ...registerForm, username: e.target.value })}
+            />
+            <input
+              placeholder='Email'
+              value={registerForm.email}
+              onChange={e => setRegisterForm({ ...registerForm, email: e.target.value })}
             />
             <input
               type="password"
